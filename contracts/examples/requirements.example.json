@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "1.0",
+  "ticket": { "provider": "example", "id": "ENG-123", "url": "https://tickets.example.invalid/ENG-123" },
+  "objective": "Return a stable health response for load balancers.",
+  "scope": { "in": ["Add a readiness endpoint"], "out": ["Change liveness behavior"] },
+  "actors": ["load balancer"],
+  "requirements": [{ "id": "REQ-1", "kind": "functional", "statement": "Readiness reports dependency state.", "source": "ticket description" }],
+  "acceptanceCriteria": [{ "id": "AC-1", "given": "a required dependency is unavailable", "when": "readiness is requested", "then": "the endpoint returns a non-ready response", "requirementIds": ["REQ-1"] }],
+  "constraints": [], "dependencies": [], "assumptions": [], "ambiguities": []
+}
+

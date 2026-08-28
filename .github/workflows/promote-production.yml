@@ -1,0 +1,93 @@
+name: Promote Staged Artifact to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_run_id:
+        description: Successful release workflow run ID containing staging evidence
+        required: true
+        type: string
+      commit_sha:
+        description: Exact 40-character staged commit SHA
+        required: true
+        type: string
+      artifact_digest:
+        description: Exact staged sha256 digest (sha256:...)
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      commit_sha: ${{ steps.evidence.outputs.commit_sha }}
+      artifact_digest: ${{ steps.evidence.outputs.artifact_digest }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: promotion-${{ inputs.commit_sha }}
+          run-id: ${{ inputs.release_run_id }}
+          github-token: ${{ github.token }}
+          path: promotion
+      - name: Read staged evidence
+        id: evidence
+        run: |
+          echo "commit_sha=$(tr -d '\n' < promotion/commit-sha)" >> "$GITHUB_OUTPUT"
+          echo "artifact_digest=$(tr -d '\n' < promotion/artifact-digest)" >> "$GITHUB_OUTPUT"
+      - name: Verify exact staged release
+        env:
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+          RELEASE_SHA: ${{ steps.evidence.outputs.commit_sha }}
+          REQUESTED_DIGEST: ${{ inputs.artifact_digest }}
+          RELEASE_DIGEST: ${{ steps.evidence.outputs.artifact_digest }}
+        run: |
+          test "$GITHUB_REF" = "refs/heads/main"
+          python3 scripts/verify_promotion.py \
+            --requested-sha "$REQUESTED_SHA" \
+            --release-sha "$RELEASE_SHA" \
+            --requested-digest "$REQUESTED_DIGEST" \
+            --release-digest "$RELEASE_DIGEST"
+      - name: Verify commit is reachable from main
+        env:
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+        run: |
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor "$REQUESTED_SHA" origin/main
+
+  production:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: production
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: release-${{ needs.verify.outputs.commit_sha }}
+          run-id: ${{ inputs.release_run_id }}
+          github-token: ${{ github.token }}
+      - name: Re-verify artifact digest
+        env:
+          EXPECTED: ${{ needs.verify.outputs.artifact_digest }}
+        run: test "$EXPECTED" = "sha256:$(sha256sum release.tgz | cut -d' ' -f1)"
+      - name: Promote without rebuilding
+        run: |
+          echo "Replace this step with a reviewed production adapter."
+          echo "commit=${{ needs.verify.outputs.commit_sha }} digest=${{ needs.verify.outputs.artifact_digest }}"
+      - name: Verify production and rollback on failure
+        run: echo "Replace with deterministic verification; make the deploy adapter roll back on failure."

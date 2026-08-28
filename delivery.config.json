@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.0",
+  "commands": {
+    "formatCheck": "make format-check",
+    "lint": "make lint",
+    "typecheck": "make typecheck",
+    "unitTest": "make test-unit",
+    "integrationTest": "make test-integration",
+    "build": "make build",
+    "securityScan": "make security-scan"
+  },
+  "release": {
+    "artifactPath": "dist",
+    "stagingEnvironment": "staging",
+    "productionEnvironment": "production",
+    "requireImmutableDigest": true,
+    "rebuildOnPromotion": false
+  }
+}
+

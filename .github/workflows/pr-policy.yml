@@ -1,0 +1,26 @@
+name: PR Policy
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  metadata:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require delivery metadata and non-draft state
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_DRAFT: ${{ github.event.pull_request.draft }}
+        run: |
+          test "$PR_DRAFT" = "false"
+          printf '%s' "$PR_BODY" | grep -q 'Requirements contract:'
+          printf '%s' "$PR_BODY" | grep -q 'Delivery packet:'
+          printf '%s' "$PR_BODY" | grep -q 'Independent review:'
+          printf '%s' "$PR_BODY" | grep -q 'Rollback:'
+
