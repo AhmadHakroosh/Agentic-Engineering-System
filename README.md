@@ -1,4 +1,4 @@
-# Agentic Software Delivery Starter
+# Agentic Software Factory Starter
 
 A language-neutral starter for a controlled delivery path:
 
