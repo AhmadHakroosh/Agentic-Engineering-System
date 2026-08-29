@@ -3,7 +3,7 @@
 
 import json
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[1]
 path = ROOT / "delivery.config.json"
@@ -23,9 +23,15 @@ if release.get("rebuildOnPromotion") is not False:
     errors.append("rebuildOnPromotion must be false")
 if release.get("productionEnvironment") != "production":
     errors.append("productionEnvironment must be production")
+artifact_path = release.get("artifactPath")
+if not isinstance(artifact_path, str) or not artifact_path.strip():
+    errors.append("artifactPath must be a non-empty relative path")
+else:
+    normalized = PurePosixPath(artifact_path)
+    if normalized.is_absolute() or ".." in normalized.parts:
+        errors.append("artifactPath must remain inside the repository")
 
 if errors:
     print("\n".join(f"ERROR: {error}" for error in errors), file=sys.stderr)
     raise SystemExit(1)
 print("Delivery configuration is fail-closed and deterministic")
-

@@ -2,7 +2,7 @@
 
 ## Required GitHub configuration
 
-Protect `main` and require pull requests, at least one human approval, dismissal of stale approvals, resolution of conversations, linear history if desired, and these checks: `contracts`, `project-checks`, and `metadata`. Prevent force pushes and branch deletion. Do not grant agents bypass rights.
+Protect `main` and require pull requests, at least one human approval, dismissal of stale approvals, resolution of conversations, linear history if desired, and these checks: `contracts`, `project-checks`, and `metadata`. The `metadata` job rejects blank delivery fields and incomplete attestations. Prevent force pushes and branch deletion. Do not grant agents bypass rights.
 
 Create environments:
 
@@ -13,7 +13,10 @@ Use OIDC/short-lived federation in deployment adapters. Environment secrets are 
 
 ## Adopting the workflows
 
-Replace configured `make` commands with commands that already work locally. Implement the two placeholder deployment steps with reviewed scripts or reusable workflows. Both must accept an artifact path, expected digest, and target environment; neither may build source. Make verification return nonzero on failure and make production deployment perform or trigger rollback.
+Replace configured `make` commands with commands that already work locally. The release workflow starts only after the `CI` workflow succeeds for a push to `main`, checks out that exact commit, and packages `release.artifactPath` from `delivery.config.json`.
+
+Implement the two placeholder deployment steps with reviewed scripts or reusable workflows. Both must accept an artifact path, expected digest, and target environment; neither may build source. Make verification return nonzero on failure and make production deployment perform or trigger rollback.
+
+Configure a durable evidence store for SHA-bound delivery packets and reviews, such as immutable check artifacts, PR comments, or an append-only external store. Do not commit that evidence into the Git tree it identifies. The ignored `.delivery/` directory is only a local fallback for the manual example.
 
 The checked-in workflows are deliberately inert at the cloud boundary: they demonstrate and enforce promotion mechanics but cannot deploy until an operator supplies a target-specific adapter.
-

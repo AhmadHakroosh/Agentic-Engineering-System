@@ -5,6 +5,8 @@ import json
 import sys
 from pathlib import Path
 
+from validate_instance import validate as validate_instance
+
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMAS = ROOT / "contracts" / "schemas"
 EXAMPLES = ROOT / "contracts" / "examples"
@@ -45,10 +47,17 @@ def main() -> None:
         example = load(path)
         if example.get("schemaVersion") != "1.0":
             fail(f"{path.relative_to(ROOT)} has unsupported schemaVersion")
+        contract_name = path.name.removesuffix(".example.json")
+        schema_path = SCHEMAS / f"{contract_name}.schema.json"
+        if not schema_path.exists():
+            fail(f"{path.relative_to(ROOT)} has no matching schema")
+        errors: list[str] = []
+        validate_instance(load(schema_path), example, load(schema_path), "$", errors)
+        if errors:
+            fail(f"{path.relative_to(ROOT)}: {'; '.join(errors)}")
 
     print(f"Validated {len(schema_files)} schemas and {len(list(EXAMPLES.glob('*.json')))} examples")
 
 
 if __name__ == "__main__":
     main()
-
