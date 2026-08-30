@@ -166,6 +166,7 @@ See [Repository operations](docs/operations.md) and [Delivery policy](policies/d
 
 ## Further reading
 
+- [Production autonomy roadmap](ROADMAP.md)
 - [Governed delivery workflow](docs/workflow.md)
 - [Repository operations](docs/operations.md)
 - [Threat model](docs/threat-model.md)
